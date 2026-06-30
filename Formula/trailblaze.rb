@@ -11,6 +11,12 @@ class Trailblaze < Formula
   version "2026.06.24"
 
   depends_on "openjdk@17"
+  # `trailblaze report` shells out to these for its animated exports: ffmpeg for --gif/--video,
+  # and libwebp's img2webp/cwebp/webpmux (the `webp` formula) for --webp, since plain ffmpeg
+  # isn't built against libwebp. Both are non-keg-only, so the launcher needs no PATH wiring.
+  # See https://github.com/block/trailblaze/issues/174
+  depends_on "ffmpeg"
+  depends_on "webp"
 
   on_macos do
     depends_on arch: :arm64
@@ -32,5 +38,10 @@ class Trailblaze < Formula
 
   test do
     assert_match "Trailblaze v#{version}", shell_output("BLAZE_CDS=0 #{bin}/trailblaze --version")
+
+    # The animated-export tools must actually be installed: img2webp (from `webp`) backs
+    # --webp, ffmpeg backs --gif/--video. Both deps are non-keg-only, so they resolve on PATH.
+    assert_predicate Formula["webp"].opt_bin/"img2webp", :exist?
+    assert_predicate Formula["ffmpeg"].opt_bin/"ffmpeg", :exist?
   end
 end
